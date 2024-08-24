@@ -15,28 +15,13 @@ var pace int
 
 func main() {
 	flag.IntVar(&generations, "gens", 10, "Number of generations")
-	flag.IntVar(&rows, "rows", 10, "Number of generations")
-	flag.IntVar(&columns, "cols", 10, "Number of generations")
+	flag.IntVar(&rows, "rows", 10, "Number of rows")
+	flag.IntVar(&columns, "cols", 10, "Number of columns")
 	flag.IntVar(&pace, "pace", 100, "Millis to wait for")
 	flag.Parse()
 
 	alive := 0
-	universe := make([][]byte, rows)
-	for i := range universe {
-		universe[i] = make([]byte, columns)
-	}
-
-	//init
-	for i := 0; i < rows; i++ {
-		for j := 0; j < columns; j++ {
-			if rand.Intn(2) == 1 {
-				universe[i][j] = 'O'
-				alive++
-			} else {
-				universe[i][j] = ' '
-			}
-		}
-	}
+	universe := initUniverse(&alive)
 
 	//last generation
 	for i := 0; i < generations; i++ {
@@ -50,15 +35,31 @@ func main() {
 
 }
 
-func nextGeneration(universe [][]byte, alive *int) [][]byte {
-	nextUniverse := make([][]byte, rows)
-	for i := 0; i < rows; i++ {
-		nextUniverse[i] = make([]byte, columns)
+func initUniverse(alive *int) [][]byte {
+	universe := make([][]byte, rows)
+	for i := range universe {
+		universe[i] = make([]byte, columns)
 	}
 
+	for i := 0; i < rows; i++ {
+		for j := 0; j < columns; j++ {
+			if rand.Intn(2) == 1 {
+				universe[i][j] = 'O'
+				*alive++
+			} else {
+				universe[i][j] = ' '
+			}
+		}
+	}
+	return universe
+}
+
+func nextGeneration(universe [][]byte, alive *int) [][]byte {
+	nextUniverse := make([][]byte, rows)
 	var wg sync.WaitGroup
 
 	for i := 0; i < rows; i++ {
+		nextUniverse[i] = make([]byte, columns)
 		for j := 0; j < columns; j++ {
 			wg.Add(1)
 			go func(i, j int) {
@@ -98,30 +99,22 @@ func nextGeneration(universe [][]byte, alive *int) [][]byte {
 
 func countAlive(universe [][]byte, i, j int) int {
 	count := 0
-	if universe[periodic(i-1, rows)][periodic(j-1, columns)] == 'O' {
-		count++
+	neighbors := []struct {
+		dx, dy int
+	}{
+		{-1, -1}, {-1, 0}, {-1, +1},
+		{0, -1}, {0, +1},
+		{+1, -1}, {+1, 0}, {+1, +1},
 	}
-	if universe[periodic(i-1, rows)][j] == 'O' {
-		count++
+
+	for _, neighbor := range neighbors {
+		ni := periodic(i+neighbor.dx, rows)
+		nj := periodic(j+neighbor.dy, columns)
+		if universe[ni][nj] == 'O' {
+			count++
+		}
 	}
-	if universe[periodic(i-1, rows)][periodic(j+1, columns)] == 'O' {
-		count++
-	}
-	if universe[periodic(i+1, rows)][periodic(j-1, columns)] == 'O' {
-		count++
-	}
-	if universe[periodic(i+1, rows)][j] == 'O' {
-		count++
-	}
-	if universe[periodic(i+1, rows)][periodic(j+1, columns)] == 'O' {
-		count++
-	}
-	if universe[i][periodic(j-1, columns)] == 'O' {
-		count++
-	}
-	if universe[i][periodic(j+1, columns)] == 'O' {
-		count++
-	}
+
 	return count
 }
 
