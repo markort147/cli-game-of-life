@@ -5,11 +5,15 @@ import (
 	"math/rand"
 )
 
-const deadMarker = ' '
-const aliveMarker = '.'
+// Constants representing the cell states
+const (
+	deadMarker  = ' '
+	aliveMarker = '𖡹'
+)
 
+// Cell represent a single cell in the universe
 type cell struct {
-	marker byte
+	marker rune
 }
 
 func (c *cell) isAlive() bool {
@@ -24,13 +28,25 @@ func (c *cell) die() {
 	c.marker = deadMarker
 }
 
+// Universe represents the grid of cells and related generation information
 type Universe struct {
 	cells        [][]cell
 	aliveCounter int
 	generation   int
 }
 
-func (u *Universe) Init(rows, columns int, density float64) {
+// NewTimeline initializes a slice of universes, each representing a generation.
+func NewTimeline(generations int, rows int, columns int, density float64) []Universe {
+	timeline := make([]Universe, generations+1)
+	timeline[0].init(rows, columns, density)
+	for gen := 1; gen < generations+1; gen++ {
+		timeline[gen] = timeline[gen-1].nextGeneration()
+	}
+	return timeline
+}
+
+// init initializes the universe with a random configuration based on the density parameter
+func (u *Universe) init(rows, columns int, density float64) {
 	u.cells = make([][]cell, rows)
 	for row := range rows {
 		u.cells[row] = make([]cell, columns)
@@ -45,37 +61,40 @@ func (u *Universe) Init(rows, columns int, density float64) {
 	}
 }
 
-func (u *Universe) NextGeneration() Universe {
-	var nextUniverse Universe
-	nextUniverse.generation = u.generation + 1
-	nextUniverse.cells = make([][]cell, len(u.cells))
+// nextGeneration computes the next state of the universe based on the current state.
+func (u *Universe) nextGeneration() Universe {
+	next := Universe{
+		cells:      make([][]cell, len(u.cells)),
+		generation: u.generation + 1,
+	}
 
 	for row := range u.cells {
-		nextUniverse.cells[row] = make([]cell, len(u.cells[row]))
+		next.cells[row] = make([]cell, len(u.cells[row]))
 		for col := range u.cells[row] {
 			aliveNeighbors := u.aliveNeighbors(row, col)
 			if u.cells[row][col].isAlive() {
 				if aliveNeighbors < 2 || aliveNeighbors > 3 {
-					nextUniverse.cells[row][col].die()
+					next.cells[row][col].die()
 				} else {
-					nextUniverse.cells[row][col].arise()
-					nextUniverse.aliveCounter++
+					next.cells[row][col].arise()
+					next.aliveCounter++
 				}
 			} else {
 				if aliveNeighbors == 3 {
-					nextUniverse.cells[row][col].arise()
-					nextUniverse.aliveCounter++
+					next.cells[row][col].arise()
+					next.aliveCounter++
 				} else {
-					nextUniverse.cells[row][col].die()
+					next.cells[row][col].die()
 				}
 			}
 
 		}
 	}
 
-	return nextUniverse
+	return next
 }
 
+// aliveNeighbors counts the number of alive neighbors for a given cell
 func (u *Universe) aliveNeighbors(i, j int) int {
 	rows := len(u.cells)
 	cols := len(u.cells[0])
@@ -100,9 +119,10 @@ func (u *Universe) aliveNeighbors(i, j int) int {
 	return count
 }
 
+// Print outputs the current state of the universe to the console
 func (u *Universe) Print() {
-	fmt.Printf("Generation #%d            \n", u.generation)
-	fmt.Printf("Alive: %d              \n", u.aliveCounter) //todo fix print of alive between generations
+	fmt.Printf("Generation #%d\n", u.generation)
+	fmt.Printf("Alive: %d\n", u.aliveCounter) //todo fix print of alive between generations
 	for _, row := range u.cells {
 		for _, cell := range row {
 			fmt.Print(string(cell.marker))
