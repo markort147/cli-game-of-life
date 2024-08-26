@@ -6,7 +6,7 @@ import (
 )
 
 const deadMarker = ' '
-const aliveMarker = 'O'
+const aliveMarker = '.'
 
 type cell struct {
 	marker byte
@@ -101,8 +101,8 @@ func (u *Universe) aliveNeighbors(i, j int) int {
 }
 
 func (u *Universe) Print() {
-	fmt.Printf("Generation #%d\n", u.generation)
-	fmt.Printf("Alive: %d\n", u.aliveCounter) //todo fix print of alive between generations
+	fmt.Printf("Generation #%d            \n", u.generation)
+	fmt.Printf("Alive: %d              \n", u.aliveCounter) //todo fix print of alive between generations
 	for _, row := range u.cells {
 		for _, cell := range row {
 			fmt.Print(string(cell.marker))

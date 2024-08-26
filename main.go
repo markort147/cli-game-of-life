@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/inancgumus/screen"
+	"log"
 	"main/universe"
 	"time"
 )
@@ -15,14 +17,51 @@ func main() {
 	density := flag.Float64("dens", 0.5, "Initial density of random cells")
 	flag.Parse()
 
-	var uni universe.Universe
-	uni.Init(*rows, *columns, *density)
+	timeline := make([]universe.Universe, *generations+1)
+	timeline[0].Init(*rows, *columns, *density)
+	for gen := 1; gen < *generations+1; gen++ {
+		timeline[gen] = timeline[gen-1].NextGeneration()
+	}
 
 	screen.Clear()
-	for range *generations + 1 {
+	exit := false
+	currGen := 0
+	autoMode := false
+	for !exit {
 		screen.MoveTopLeft()
-		uni.Print()
-		uni = uni.NextGeneration()
-		time.Sleep(time.Duration(*pace) * time.Millisecond)
+		timeline[currGen].Print()
+
+		if autoMode {
+			if currGen < *generations {
+				currGen++
+				time.Sleep(time.Duration(*pace) * time.Millisecond)
+			} else {
+				autoMode = false
+			}
+		} else {
+			fmt.Print("Enter command [(n)ext (p)revious (q)uit (a)uto (r)eset]: ")
+			var command string
+			_, err := fmt.Scanf("%s\n", &command)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			switch command {
+			case "q":
+				exit = true
+			case "n":
+				if currGen < *generations {
+					currGen++
+				}
+			case "p":
+				if currGen > 0 {
+					currGen--
+				}
+			case "a":
+				autoMode = true
+			case "r":
+				currGen = 0
+			}
+		}
 	}
 }
