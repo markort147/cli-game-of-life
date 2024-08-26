@@ -13,7 +13,7 @@ over generations based on the number of alive neighbors according to the followi
 2. Any live cell with two or three live neighbors survives to the next generation.
 3. Any live cell with more than three live neighbors dies (overpopulation).
 4. Any dead cell with exactly three live neighbors becomes a live cell (reproduction).
-5. For more information on the Game of Life, you can visit its Wikipedia page.
+For more information on the Game of Life, you can visit its [Wikipedia page](https://en.wikipedia.org/wiki/Conway's_Game_of_Life).
 
 ## Features
 
